@@ -4,6 +4,7 @@ import jsPDF from "jspdf";
 const EXPORT_SCALE = 4; // native size is 720x540, so render at 4x (2880x2160) for crisp downloads
 
 async function renderToCanvas(node: HTMLElement): Promise<HTMLCanvasElement> {
+  await document.fonts.ready; // wait for Google Fonts (Balthazar, EB Garamond, Poppins) to fully load
   return html2canvas(node, {
     scale: EXPORT_SCALE,
     useCORS: true,
