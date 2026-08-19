@@ -7,14 +7,14 @@ interface AttendanceRow {
 // Maps known raw-data variants to a single canonical display label.
 // Add more entries here as you spot new inconsistent spellings in the data.
 const CANONICAL_DEPARTMENTS: Record<string, string> = {
-  cse: "CSE",
-  cs: "CS",
-  aiml: "AIML",
+  "cse": "CSE",
+  "cs": "CSE",
+  "aiml": "AIML",
   "cyber security": "Cybersecurity",
-  cybersecurity: "Cybersecurity",
-  electronics: "Electronics",
+  "cybersecurity": "Cybersecurity",
+  "electronics": "Electronics",
   "electronics eng": "Electronics",
-  mechanical: "Mechanical",
+  "mechanical": "Mechanical",
 };
 
 function canonicalize(raw: string): string {
