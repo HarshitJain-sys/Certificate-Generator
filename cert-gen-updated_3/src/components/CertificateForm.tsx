@@ -1,9 +1,7 @@
 import { useForm } from "react-hook-form";
-import attendanceData from "../data/attendance.json";
 import type { CertificateFormData } from "../types/certificate";
 import { isValidEmail, isValidIndianPhone, isValidFullName } from "../lib/validation";
-
-const DEPARTMENTS = [...new Set(attendanceData.map((record) => record.department.trim()))].sort();
+import { DEPARTMENT_OPTIONS } from "../lib/departments";
 
 interface CertificateFormProps {
   defaultValues: CertificateFormData;
@@ -52,8 +50,6 @@ export default function CertificateForm({
         <input
           id="fullName"
           type="text"
-          aria-invalid={errors.fullName ? "true" : "false"}
-          aria-describedby={errors.fullName ? "fullName-error" : undefined}
           placeholder="e.g. Harshit Sharma"
           className={inputClass(!!errors.fullName)}
           {...register("fullName", {
@@ -67,8 +63,6 @@ export default function CertificateForm({
         <input
           id="email"
           type="email"
-          aria-invalid={errors.email ? "true" : "false"}
-          aria-describedby={errors.email ? "email-error" : undefined}
           placeholder="e.g. harshit@example.com"
           className={inputClass(!!errors.email)}
           {...register("email", {
@@ -81,8 +75,6 @@ export default function CertificateForm({
       <Field label="Department" htmlFor="department" error={errors.department?.message}>
         <select
           id="department"
-          aria-invalid={errors.department ? "true" : "false"}
-          aria-describedby={errors.department ? "department-error" : undefined}
           defaultValue=""
           className={inputClass(!!errors.department)}
           {...register("department", {
@@ -92,7 +84,7 @@ export default function CertificateForm({
           <option value="" disabled>
             Select department
           </option>
-          {DEPARTMENTS.map((dept) => (
+          {DEPARTMENT_OPTIONS.map((dept) => (
             <option key={dept} value={dept}>
               {dept}
             </option>
@@ -108,8 +100,6 @@ export default function CertificateForm({
           <input
             id="phone"
             type="tel"
-            aria-invalid={errors.phone ? "true" : "false"}
-            aria-describedby={errors.phone ? "phone-error" : undefined}
             placeholder="10-digit mobile number"
             className={inputClass(!!errors.phone, "rounded-l-none")}
             {...register("phone", {
@@ -168,11 +158,7 @@ function Field({
         {label}
       </label>
       {children}
-      {error && (
-        <p id={`${htmlFor}-error`} className="mt-1 text-xs text-red-500">
-          {error}
-        </p>
-      )}
+      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
     </div>
   );
 }
