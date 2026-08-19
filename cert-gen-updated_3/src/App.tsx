@@ -15,12 +15,13 @@ export default function App() {
   const { isDark, toggleTheme } = useTheme();
   const [formData, setFormData] = useState<CertificateFormData>(EMPTY_FORM);
 
-  // The certificate is gated entirely behind `verifiedRecord`. It is the
-  // *database* record that matched, not the raw form input — the
-  // certificate is always rendered from this, never from user-typed values.
+  // The certificate is gated behind `verifiedRecord` (proves eligibility),
+  // but rendered from `verifiedSnapshot.fullName` — the name the student
+  // typed — never from the database record's name.
   const [verifiedRecord, setVerifiedRecord] = useState<AttendanceRecord | null>(null);
   // Snapshot of the form data at the moment verification succeeded, so we
-  // can detect post-verification edits and invalidate immediately.
+  // can detect post-verification edits and invalidate immediately, and so
+  // we have the student-typed full name to render on the certificate.
   const [verifiedSnapshot, setVerifiedSnapshot] = useState<CertificateFormData | null>(null);
 
   const [isExporting, setIsExporting] = useState(false);
@@ -82,10 +83,10 @@ export default function App() {
   };
 
   const handlePng = () =>
-    withExportGuard("PNG", () => exportToPng(certificateRef.current as HTMLDivElement, (verifiedRecord!.full_name ?? verifiedRecord!.name ?? "")));
+    withExportGuard("PNG", () => exportToPng(certificateRef.current as HTMLDivElement, verifiedSnapshot?.fullName ?? ""));
 
   const handlePdf = () =>
-    withExportGuard("PDF", () => exportToPdf(certificateRef.current as HTMLDivElement, (verifiedRecord!.full_name ?? verifiedRecord!.name ?? "")));
+    withExportGuard("PDF", () => exportToPdf(certificateRef.current as HTMLDivElement, verifiedSnapshot?.fullName ?? ""));
 
   const handlePrint = () =>
     withExportGuard("Print", () => printCertificate(certificateRef.current as HTMLDivElement));
@@ -107,7 +108,7 @@ export default function App() {
 
         <section className="flex flex-col gap-4">
           {verifiedRecord ? (
-            <CertificatePreview ref={certificateRef} fullName={(verifiedRecord.full_name ?? verifiedRecord.name ?? "")} />
+            <CertificatePreview ref={certificateRef} fullName={verifiedSnapshot?.fullName ?? ""} />
           ) : (
             <div className="flex min-h-[320px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center dark:border-slate-700 dark:bg-slate-900">
               <ShieldCheck className="text-slate-300 dark:text-slate-600" size={28} />
@@ -140,9 +141,8 @@ export default function App() {
 
           {!verifiedRecord && (
             <p className="text-sm text-slate-400">
-              Fill in your details exactly as recorded at the workshop and click{" "}
-              <span className="font-medium">Verify &amp; generate certificate</span>. All four fields must match a
-              single attendance record.
+              Fill in your details and click <span className="font-medium">Verify &amp; generate certificate</span>.
+              Your email and phone number must match a single attendance record.
             </p>
           )}
         </section>

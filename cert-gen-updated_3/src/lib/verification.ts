@@ -19,22 +19,23 @@ function normalizeText(value: string): string {
   return value.trim().toLowerCase();
 }
 
-// Index the dataset by normalized email once at module load. Email is the
-// most selective field, so this turns lookup from an O(n) scan into an O(1)
-// map hit, with the remaining three fields checked only against that one
-// candidate record instead of every record in the dataset.
-const RECORDS_BY_EMAIL = new Map<string, AttendanceRecord>(
-  RECORDS.map((record) => [normalizeText(record.email), record]),
-);
+// Index by email once at module load. Keep all records for an email so a
+// duplicate email cannot silently overwrite another attendance record.
+const RECORDS_BY_EMAIL = new Map<string, AttendanceRecord[]>();
+for (const record of RECORDS) {
+  const email = normalizeText(record.email);
+  const recordsForEmail = RECORDS_BY_EMAIL.get(email) ?? [];
+  recordsForEmail.push(record);
+  RECORDS_BY_EMAIL.set(email, recordsForEmail);
+}
 
 /**
- * Verifies form input against the attendance dataset. All four fields
- * (full name, email, phone, department) must match a single record,
- * compared case-insensitively with whitespace trimmed and phone numbers
- * normalized (spaces/hyphens/country code stripped).
+ * Verifies form input against the attendance dataset. Only `email` and
+ * `phone` are checked against a single record — name and department are
+ * NOT part of the match. The student's typed full name is used as-is for
+ * rendering the certificate; only the matched record is used to gate access.
  *
- * Returns the matched database record — the source of truth for what gets
- * printed on the certificate — or null if no record matches.
+ * Returns the matched database record, or null if no record matches.
  *
  * NOTE: this project is a static, client-only app with no backend, so this
  * check runs in the browser and the dataset ships inside the client bundle.
@@ -44,22 +45,15 @@ const RECORDS_BY_EMAIL = new Map<string, AttendanceRecord>(
  * moving this check to a server.
  */
 export function verifyAttendance(data: CertificateFormData): AttendanceRecord | null {
-  const name = normalizeText(data.fullName);
   const email = normalizeText(data.email);
   const phone = normalizeIndianPhone(data.phone);
-  const department = normalizeText(data.department);
 
-  if (!name || !email || !phone || !department) return null;
+  if (!email || !phone) return null;
 
-  const candidate = RECORDS_BY_EMAIL.get(email);
-  if (!candidate) return null;
+  const candidates = RECORDS_BY_EMAIL.get(email) ?? [];
+  const matches = candidates.filter((candidate) => normalizeIndianPhone(candidate.phone) === phone);
 
-  const isMatch =
-    normalizeText((candidate.full_name ?? candidate.name ?? "")) === name &&
-    normalizeIndianPhone(candidate.phone) === phone &&
-    normalizeText(candidate.department) === department;
-
-  return isMatch ? candidate : null;
+  return matches.length === 1 ? matches[0] : null;
 }
 
 /** True if two form snapshots are identical field-for-field (used to detect

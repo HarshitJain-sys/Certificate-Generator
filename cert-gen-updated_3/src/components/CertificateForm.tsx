@@ -1,6 +1,9 @@
 import { useForm } from "react-hook-form";
+import attendanceData from "../data/attendance.json";
 import type { CertificateFormData } from "../types/certificate";
-import { isValidEmail, isValidIndianPhone, isValidFullName, isValidDepartment } from "../lib/validation";
+import { isValidEmail, isValidIndianPhone, isValidFullName } from "../lib/validation";
+
+const DEPARTMENTS = [...new Set(attendanceData.map((record) => record.department.trim()))].sort();
 
 interface CertificateFormProps {
   defaultValues: CertificateFormData;
@@ -40,8 +43,8 @@ export default function CertificateForm({
       <div>
         <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Verify attendance</h2>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          Enter your details exactly as recorded at the workshop. All four fields are checked against the official
-          attendance records before your certificate is generated.
+          Enter your email and phone number exactly as recorded at the workshop. Both fields are checked against the
+          official attendance records before your certificate is generated.
         </p>
       </div>
 
@@ -49,6 +52,8 @@ export default function CertificateForm({
         <input
           id="fullName"
           type="text"
+          aria-invalid={errors.fullName ? "true" : "false"}
+          aria-describedby={errors.fullName ? "fullName-error" : undefined}
           placeholder="e.g. Harshit Sharma"
           className={inputClass(!!errors.fullName)}
           {...register("fullName", {
@@ -62,6 +67,8 @@ export default function CertificateForm({
         <input
           id="email"
           type="email"
+          aria-invalid={errors.email ? "true" : "false"}
+          aria-describedby={errors.email ? "email-error" : undefined}
           placeholder="e.g. harshit@example.com"
           className={inputClass(!!errors.email)}
           {...register("email", {
@@ -72,16 +79,25 @@ export default function CertificateForm({
       </Field>
 
       <Field label="Department" htmlFor="department" error={errors.department?.message}>
-        <input
+        <select
           id="department"
-          type="text"
-          placeholder="e.g. Computer Applications"
+          aria-invalid={errors.department ? "true" : "false"}
+          aria-describedby={errors.department ? "department-error" : undefined}
+          defaultValue=""
           className={inputClass(!!errors.department)}
           {...register("department", {
             required: "Department is required",
-            validate: (value) => isValidDepartment(value) || "Enter a valid department",
           })}
-        />
+        >
+          <option value="" disabled>
+            Select department
+          </option>
+          {DEPARTMENTS.map((dept) => (
+            <option key={dept} value={dept}>
+              {dept}
+            </option>
+          ))}
+        </select>
       </Field>
 
       <Field label="Phone number" htmlFor="phone" error={errors.phone?.message}>
@@ -92,6 +108,8 @@ export default function CertificateForm({
           <input
             id="phone"
             type="tel"
+            aria-invalid={errors.phone ? "true" : "false"}
+            aria-describedby={errors.phone ? "phone-error" : undefined}
             placeholder="10-digit mobile number"
             className={inputClass(!!errors.phone, "rounded-l-none")}
             {...register("phone", {
@@ -150,7 +168,11 @@ function Field({
         {label}
       </label>
       {children}
-      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
+      {error && (
+        <p id={`${htmlFor}-error`} className="mt-1 text-xs text-red-500">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
